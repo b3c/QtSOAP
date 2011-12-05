@@ -428,6 +428,7 @@ public:
 
     void addBodyItem(QtSoapType *);
     void addHeaderItem(QtSoapType *);
+    void addCustomHeader(QString value);
 
     // Method and response
     const QtSoapType &method() const;
@@ -465,6 +466,9 @@ public:
 
     // Errors
     QString errorString() const;
+    
+    QtSoapStruct &body() const;
+    QtSoapStruct &header() const;
 
 protected:
     enum MessageType {
@@ -476,8 +480,7 @@ protected:
 
     bool isValidSoapMessage(const QDomDocument &candidate);
 
-    QtSoapStruct &body() const;
-    QtSoapStruct &header() const;
+   
 
     void init();
 
@@ -491,8 +494,7 @@ private:
 
     QString errorStr;
 
-    QString externalNamespacePrefix;
-    QString externalNamespaceURI;
+    QMap<QString,QString> externalNamespace;		
 };
 
 class QT_QTSOAP_EXPORT QtSoapTypeConstructorBase
@@ -546,7 +548,7 @@ private:
     QtSoapTypeFactory();
 
 public:
-    ~QtSoapTypeFactory();
+    ~QtSoapTypeFactory(); 
 
     static QtSoapTypeFactory &instance();
 

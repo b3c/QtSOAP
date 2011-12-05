@@ -2547,9 +2547,8 @@ bool QtSoapMessage::isValidSoapMessage(const QDomDocument &candidate)
     Register an external namespace and set as current one
 */
 void QtSoapMessage::useNamespace(const QString& prefix, const QString& namespaceURI) {
-    //QtSoapNamespaces::instance().registerNamespace(prefix.toAscii(), namespaceURI.toAscii());
-    externalNamespacePrefix = prefix;
-    externalNamespaceURI = namespaceURI;
+    //QtSoapNamespaces::instance().registerNamespace(prefix.toAscii(), namespaceURI.toAscii());    
+	externalNamespace.insert(prefix, namespaceURI);
 }
 
 /*!
@@ -2573,13 +2572,18 @@ QString QtSoapMessage::toXmlString(int indent) const
     env.setAttribute("xmlns:" + QtSoapNamespaces::instance().prefixFor(XML_SCHEMA),
 		     XML_SCHEMA);
 
-    if(!externalNamespacePrefix.isEmpty()) {
-  env.setAttribute("xmlns:" + externalNamespacePrefix, externalNamespaceURI);
+    if(!externalNamespace.isEmpty()) {
+		QMap<QString,QString>::Iterator m(externalNamespace.begin());
+		while (m != externalNamespace.end() ) {
+			env.setAttribute("xmlns:" + m.key(),m.value());
+				//externalNamespacePrefix, externalNamespaceURI);
+			m++;
+		}
     }
 
 
 
-    return doc.toString(indent);
+    return doc.toString(indent); 
 }
 
 /*!
@@ -2606,13 +2610,31 @@ void QtSoapMessage::addBodyItem(QtSoapType *item)
 */
 void QtSoapMessage::addHeaderItem(QtSoapType *item)
 {
-    QtSoapType &headerTmp = envelope[QtSoapQName("Header", SOAPv11_ENVELOPE)];
-    if (!headerTmp.isValid())
-	envelope.insert(new QtSoapStruct(QtSoapQName("Header", SOAPv11_ENVELOPE)));
+    /*QtSoapStructIterator it(header());
+    QtSoapType &node = *it.data();
+    QtSoapStruct &meth = static_cast<QtSoapStruct &>(node);
+    meth.insert(item);
+	*/
+	header().insert(item);
 
-    QtSoapStruct &header = (QtSoapStruct &)envelope[QtSoapQName("Header", SOAPv11_ENVELOPE)];
-    header.insert(item);
 }
+
+/*!
+    Completely replace the request header with the given string.
+    To be used carefully :-)
+*/
+void QtSoapMessage::addCustomHeader(QString value)
+{
+	
+	QtSoapStruct * h = new QtSoapStruct(QtSoapQName("Header", value));
+	header().insert(h);    
+
+	int pausa = 0;
+	pausa++;
+
+	
+}
+
 /*!
     Returns the return value of a SOAP method response as a
     QtSoapType.
@@ -3068,6 +3090,7 @@ QString QtSoapTypeFactory::errorString() const
 
     \code
     void WeatherFetcher::readResponse()
+
     {
         const QtSoapMessage &response = transport.getResponse();
         if (response.isFault()) {
@@ -3166,11 +3189,12 @@ void QtSoapHttpTransport::submitRequest(QtSoapMessage &request, const QString &p
     QNetworkRequest networkReq;
     networkReq.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("text/xml;charset=utf-8"));
     networkReq.setRawHeader("SOAPAction", soapAction.toAscii());
+	
     url.setPath(path);
     networkReq.setUrl(url);
-
+	
     soapResponse.clear();
-    networkRep = networkMgr.post(networkReq, request.toXmlString().toUtf8().constData());
+	networkRep = networkMgr.post(networkReq, request.toXmlString().toUtf8().constData());
 }
 
 
@@ -3221,6 +3245,7 @@ void QtSoapHttpTransport::readResponse(QNetworkReply *reply)
     case QNetworkReply::NoError:
     case QNetworkReply::ContentAccessDenied:
     case QNetworkReply::ContentOperationNotPermittedError:
+
     case QNetworkReply::ContentNotFoundError:
     case QNetworkReply::UnknownContentError:
         {
