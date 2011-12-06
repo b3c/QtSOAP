@@ -1168,17 +1168,21 @@ QString QtSoapArray::arrayTypeString() const
 
     QString atString;
     QtSoapArray *ar = const_cast<QtSoapArray *>(this);
+	
+	int counter = 0;
+
     do {
-	if (ar->count()	== 0)
+	if (ar->count()	== 0 || counter == ar->count()) 
 	    break;
 
 	atString += ar->arraySizeString();
-
-	QtSoapArrayIterator it(*const_cast<QtSoapArray *>(this));
-	if (it.data()->type() != Array)
+	
+	if ( ar->at(counter).type() != Array)
 	    break;
-
-	ar = (QtSoapArray *)it.data();
+	
+	ar = (QtSoapArray *) &(ar->at(counter));
+	
+	++counter;
     } while (ar);
 
 
@@ -3192,7 +3196,7 @@ void QtSoapHttpTransport::submitRequest(QtSoapMessage &request, const QString &p
 	
     url.setPath(path);
     networkReq.setUrl(url);
-	
+
     soapResponse.clear();
 	networkRep = networkMgr.post(networkReq, request.toXmlString().toUtf8().constData());
 }
